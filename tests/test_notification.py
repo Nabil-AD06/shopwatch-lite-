@@ -1,6 +1,6 @@
 import unittest
 from src.contrat import Diagnostic, Signal
-from src.notification import choisir_canal
+from src.notification import choisir_canal, composer
 
 
 def exemple(critique=True, niveau="BLOQUANT"):
@@ -22,7 +22,21 @@ class TestNotification(unittest.TestCase):
     def test_canal_inconnu(self):
         with self.assertRaises(ValueError):
             choisir_canal("INCONNU")
+        def test_composer(self):
+         s, d = exemple()
+         lignes = composer(s, d).split("\n")
+         self.assertEqual(len(lignes), 5)
+         self.assertEqual(lignes[0], "*** BLOQUANT *** Service : paiement")
+         self.assertEqual(lignes[1], "Constat : timeout passerelle apres 30s")
+         self.assertEqual(lignes[2], "Cause : Passerelle lente")
+         self.assertEqual(lignes[3], "A faire : Isoler le service paiement")
+         self.assertEqual(lignes[4], "Origines : PAIEMENT")
 
+    def test_composer_plusieurs_origines(self):
+        s, d = exemple()
+        d.origines = ["PAIEMENT", "BUILD"]
+        derniere = composer(s, d).split("\n")[4]
+        self.assertEqual(derniere, "Origines : PAIEMENT + BUILD")
 
 if __name__ == "__main__":
     unittest.main()

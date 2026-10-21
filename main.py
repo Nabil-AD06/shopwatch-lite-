@@ -40,4 +40,20 @@ def afficher(resultat, carnet):
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
     vus, compteur, registre, carnet = set(), {}, [], []
-    entrees =
+    entrees = [(traiter_journal, x) for x in JOURNAL]
+    entrees += [(traiter_build, x) for x in RAPPORTS_BUILD]
+    entrees += [(traiter_scan, x) for x in RAPPORTS_SCAN]
+    repetes = 0
+    for numero, (traiter, brut) in enumerate(entrees, start=1):
+        resultat = traiter(brut, numero, vus, compteur, registre)
+        if resultat is None:
+            repetes += 1
+            print(f">>> SH-{numero:04d} ignore (repete)\n")
+        else:
+            afficher(resultat, carnet)
+    print(f"{len(entrees)} signaux recus, {repetes} repete(s) ignore(s), "
+          f"{len(registre)} message(s) diffuse(s), {len(carnet)} decision(s) consignee(s).")
+
+
+if __name__ == "__main__":
+    main()

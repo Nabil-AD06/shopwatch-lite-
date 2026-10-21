@@ -1,6 +1,6 @@
 import unittest
 
-from src.analyse import chercher_fiches, compter_incidents, est_repete
+from src.analyse import chercher_fiches, compter_incidents, est_repete, evaluer
 from src.contrat import FICHES, Signal
 
 
@@ -48,5 +48,17 @@ class TestAnalyse(unittest.TestCase):
 
     def test_chercher_fiches_aucune(self):
         self.assertEqual(chercher_fiches(sig(texte="service demarre"), FICHES), [])
+    
+    def test_evaluer_panne_en_boucle(self):
+        s = sig()
+        self.assertEqual(evaluer(s, 4), "BLOQUANT")
+        self.assertEqual(evaluer(s, 3), "MAJEUR")
+
+    def test_evaluer_gravite_du_signal(self):
+        self.assertEqual(evaluer(sig(gravite="MODERE")), "MODERE")
+        self.assertEqual(evaluer(sig(gravite="MINEUR"), 0), "MINEUR")
+
+    def test_evaluer_seuil_depasse(self):
+        self.assertEqual(evaluer(sig(gravite="MINEUR"), 10), "BLOQUANT")
 if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,7 @@
 import unittest
 
-from src.analyse import chercher_fiches, compter_incidents, est_repete, evaluer
+from src.analyse import (chercher_fiches, compter_incidents, diagnostiquer,
+                         est_repete, evaluer)
 from src.contrat import FICHES, Signal
 
 
@@ -60,5 +61,48 @@ class TestAnalyse(unittest.TestCase):
 
     def test_evaluer_seuil_depasse(self):
         self.assertEqual(evaluer(sig(gravite="MINEUR"), 10), "BLOQUANT")
+        
+    def test_diagnostiquer_cause_connue(self):
+        d = diagnostiquer(sig(), FICHES)
+        self.assertEqual(d.cause, FICHES["timeout"])
+        self.assertEqual(d.niveau, "MAJEUR")
+        self.assertEqual(d.action, "Observer")
+        self.assertFalse(d.critique)
+        self.assertEqual(d.origines, ["PAIEMENT"])
+        self.assertEqual(d.signal_ref, "SH-0001")
+
+    def test_diagnostiquer_cause_inconnue(self):
+        d = diagnostiquer(sig(texte="service demarre", gravite="MINEUR"), FICHES)
+        self.assertEqual(d.cause, "Cause inconnue : verification manuelle")
+
+    def test_diagnostiquer_causes_multiples(self):
+        d = diagnostiquer(sig(texte="timeout pendant le build"), FICHES)
+        self.assertEqual(d.cause, FICHES["timeout"] + " ; " + FICHES["build"])
+
+    def test_diagnostiquer_isoler_et_critique(self):
+        d = diagnostiquer(sig(), FICHES, 4)
+        self.assertEqual(d.niveau, "BLOQUANT")
+        self.assertEqual(d.action, "Isoler le service paiement")
+        self.assertTrue(d.critique)
+
+    def test_diagnostiquer_faille(self):
+        s = sig(categorie="FAILLE", gravite="BLOQUANT", service="lib-panier",
+                texte="Faille CVE-2026-7788 dans lib-panier")
+        d = diagnostiquer(s, FICHES)
+        self.assertEqual(d.action, "Corriger la dependance lib-panier")
+        self.assertFalse(d.critique)
+
+    def test_diagnostiquer_build_echec(self):
+        s = sig(categorie="BUILD_ECHEC", gravite="MAJEUR", service="deploiement",
+                texte="Build deploiement : echec")
+        d = diagnostiquer(s, FICHES)
+        self.assertEqual(d.action, "Rejouer le build deploiement")
+        self.assertFalse(d.critique)
+
+    def test_diagnostiquer_etat_evalue(self):
+        s = sig()
+        self.assertEqual(s.etat, "RECU")
+        diagnostiquer(s, FICHES)
+        self.assertEqual(s.etat, "EVALUE")    
 if __name__ == "__main__":
     unittest.main()

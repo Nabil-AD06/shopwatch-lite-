@@ -27,8 +27,15 @@ def masquer_donnees(texte: str) -> str:
         texte
     )
 
-    return texte
+    # Hotfix : masquer le jeton Bearer
+    texte = re.sub(
+        r"(Bearer\s+)\S+",
+        r"\1[MASQUE]",
+        texte,
+        flags=re.IGNORECASE
+    )
 
+    return texte
 
 def lire_journal(
     ligne: str,

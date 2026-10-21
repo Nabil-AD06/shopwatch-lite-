@@ -1,6 +1,6 @@
 import unittest
 from src.contrat import Diagnostic, Signal
-from src.notification import choisir_canal, composer
+from src.notification import choisir_canal, composer, diffuser
 
 
 def exemple(critique=True, niveau="BLOQUANT"):
@@ -37,6 +37,15 @@ class TestNotification(unittest.TestCase):
         d.origines = ["PAIEMENT", "BUILD"]
         derniere = composer(s, d).split("\n")[4]
         self.assertEqual(derniere, "Origines : PAIEMENT + BUILD")
-
+    def test_diffuser(self):
+        s, d = exemple()
+        registre = []
+        msg = diffuser(s, d, registre)
+        self.assertEqual(msg.canal, "SLACK")
+        self.assertEqual(msg.destinataire, "astreinte-shop")
+        self.assertEqual(msg.contenu, composer(s, d))
+        self.assertEqual(msg.signal_ref, "SH-0125")
+        self.assertEqual(registre, [msg])
+        self.assertEqual(s.etat, "DIFFUSE")
 if __name__ == "__main__":
     unittest.main()

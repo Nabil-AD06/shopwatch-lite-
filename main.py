@@ -48,3 +48,5 @@ def afficher(resultat, carnet):
  f"{len(registre)} message(s) diffuse(s), {len(carnet)} decision(s) consignee(s).")
 if __name__ = "__main__" :
 main()
+
+#test

@@ -1,6 +1,8 @@
 import unittest
 from src.contrat import Diagnostic, Signal
-from src.notification import choisir_canal, composer, diffuser
+from src.notification import (
+    approuver, choisir_canal, composer, consigner, diffuser,
+)
 
 
 def exemple(critique=True, niveau="BLOQUANT"):
@@ -23,14 +25,14 @@ class TestNotification(unittest.TestCase):
         with self.assertRaises(ValueError):
             choisir_canal("INCONNU")
         def test_composer(self):
-         s, d = exemple()
-         lignes = composer(s, d).split("\n")
-         self.assertEqual(len(lignes), 5)
-         self.assertEqual(lignes[0], "*** BLOQUANT *** Service : paiement")
-         self.assertEqual(lignes[1], "Constat : timeout passerelle apres 30s")
-         self.assertEqual(lignes[2], "Cause : Passerelle lente")
-         self.assertEqual(lignes[3], "A faire : Isoler le service paiement")
-         self.assertEqual(lignes[4], "Origines : PAIEMENT")
+          s, d = exemple()
+          lignes = composer(s, d).split("\n")
+          self.assertEqual(len(lignes), 5)
+          self.assertEqual(lignes[0], "*** BLOQUANT *** Service : paiement")
+          self.assertEqual(lignes[1], "Constat : timeout passerelle apres 30s")
+          self.assertEqual(lignes[2], "Cause : Passerelle lente")
+          self.assertEqual(lignes[3], "A faire : Isoler le service paiement")
+          self.assertEqual(lignes[4], "Origines : PAIEMENT")
 
     def test_composer_plusieurs_origines(self):
         s, d = exemple()
@@ -47,5 +49,31 @@ class TestNotification(unittest.TestCase):
         self.assertEqual(msg.signal_ref, "SH-0125")
         self.assertEqual(registre, [msg])
         self.assertEqual(s.etat, "DIFFUSE")
+        def test_approbation(self):
+         _, d = exemple()
+        self.assertTrue(approuver(d, " OUI "))
+        self.assertFalse(approuver(d, "n"))
+
+    def test_approbation_reponses_valides(self):
+        _, d = exemple()
+        for reponse in ["o", "oui", "ok", "yes", "OK", " Yes "]:
+            self.assertTrue(approuver(d, reponse))
+
+    def test_approbation_non_critique(self):
+        _, d = exemple(critique=False)
+        self.assertTrue(approuver(d, "non"))
+
+    def test_consigner(self):
+        _, d = exemple()
+        carnet = []
+        entree = consigner(d, True, "Selma", carnet, "2026-11-27T17:05:00Z")
+        self.assertEqual(entree, {
+            "ref": "SH-0125",
+            "action": "Isoler le service paiement",
+            "accord": True,
+            "responsable": "Selma",
+            "instant": "2026-11-27T17:05:00Z",
+        })
+        self.assertEqual(carnet, [entree])
 if __name__ == "__main__":
     unittest.main()

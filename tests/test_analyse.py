@@ -1,7 +1,7 @@
 import unittest
 
-from src.analyse import compter_incidents, est_repete
-from src.contrat import Signal
+from src.analyse import chercher_fiches, compter_incidents, est_repete
+from src.contrat import FICHES, Signal
 
 
 def sig(categorie="JOURNAL", gravite="MAJEUR", texte="timeout passerelle apres 30s",
@@ -34,6 +34,19 @@ class TestAnalyse(unittest.TestCase):
         self.assertEqual(compter_incidents(sig(categorie="FAILLE"), compteur), 0)
         self.assertEqual(compteur, {})
 
+    def test_chercher_fiches(self):
+        conseils = chercher_fiches(sig(), FICHES)
+        self.assertEqual(conseils, [FICHES["timeout"]])
 
+    def test_chercher_fiches_casse_ignoree(self):
+        conseils = chercher_fiches(sig(texte="TIMEOUT sur la passerelle"), FICHES)
+        self.assertEqual(conseils, [FICHES["timeout"]])
+
+    def test_chercher_fiches_ordre_de_la_base(self):
+        conseils = chercher_fiches(sig(texte="faille puis build puis timeout"), FICHES)
+        self.assertEqual(conseils, [FICHES["timeout"], FICHES["build"], FICHES["faille"]])
+
+    def test_chercher_fiches_aucune(self):
+        self.assertEqual(chercher_fiches(sig(texte="service demarre"), FICHES), [])
 if __name__ == "__main__":
     unittest.main()

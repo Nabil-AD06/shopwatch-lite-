@@ -17,6 +17,14 @@ class TestExtraction(unittest.TestCase):
 
         self.assertNotIn("user@example.com", resultat)
 
+    
+    def test_masquer_jeton_bearer(self):
+        texte = "Authorization: Bearer abc123secret"
+        resultat = masquer_donnees(texte)
+
+        self.assertNotIn("abc123secret", resultat)
+        self.assertIn("Bearer [MASQUE]", resultat)
+
     def test_lire_journal(self):
         signal = lire_journal(
             "2026-11-27 paiement ERROR timeout",
